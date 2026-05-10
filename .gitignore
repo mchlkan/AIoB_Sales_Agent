@@ -1,0 +1,45 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Local databases and runtime output
+*.db
+*.sqlite
+*.sqlite3
+db/*.db
+db/*.sqlite
+db/*.sqlite3
+logs/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Notebooks / local scratch
+.ipynb_checkpoints/
+.Rhistory
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
