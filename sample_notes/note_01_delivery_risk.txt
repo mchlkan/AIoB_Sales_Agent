@@ -1,0 +1,2 @@
+Just finished a call with Acme Corporation about the GTX Pro refresh. Zane Levy has been working the opportunity and the customer is still interested, but procurement is worried about delivery timing and whether our team can support integration before the Q3 rollout. They asked for a revised quote and implementation timeline by Friday. I think this should move to Proposal if we can confirm delivery dates. Please create a follow-up task to send the revised quote and timeline.
+
