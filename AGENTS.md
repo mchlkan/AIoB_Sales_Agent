@@ -2,7 +2,7 @@
 
 ## Project
 
-Build **RepLog AI**, a Streamlit MVP for a voice/text-to-CRM sales admin agent. The app should use the provided CRM CSV files, call a real LLM, propose structured CRM updates from messy meeting notes/transcripts, and require human approval before writing changes to a local SQLite database.
+Build **Close Loop**, a Streamlit MVP for a voice/text-to-CRM sales admin agent. The app should use the provided CRM CSV files, call a real LLM, propose structured CRM updates from messy meeting notes/transcripts, and require human approval before writing changes to a local SQLite database.
 
 ## MVP Focus
 

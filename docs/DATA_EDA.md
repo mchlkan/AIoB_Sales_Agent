@@ -1,4 +1,4 @@
-# RepLog AI Data EDA
+# Close Loop Data EDA
 
 This MVP treats the provided CSVs as immutable source CRM data. The app loads them into SQLite and creates new runtime tables for approved meeting logs, tasks, and audit events.
 

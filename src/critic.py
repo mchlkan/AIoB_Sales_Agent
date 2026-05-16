@@ -73,7 +73,7 @@ class EvidenceCriticAgent:
     @staticmethod
     def _build_prompt(note: str, proposal: ExtractionProposal) -> str:
         return f"""
-You are Agent #2, the RepLog AI evidence critic.
+You are Agent #2, the Close Loop evidence critic.
 
 Check whether the extracted CRM proposal is grounded in the original meeting note.
 Do not validate against CRM tables. Only judge support from the note itself.

@@ -1,8 +1,8 @@
-# RepLog AI — Voice/Text-to-CRM Sales Admin Agent MVP
+# Close Loop — Voice/Text-to-CRM Sales Admin Agent MVP
 
 ## 1. Executive Summary
 
-**RepLog AI** is an AI sales admin agent for B2B sales teams. It turns messy sales meeting notes or voice memo transcripts into structured CRM update proposals, follow-up tasks, and searchable customer memory.
+**Close Loop** is an AI sales admin agent for B2B sales teams. It turns messy sales meeting notes or voice memo transcripts into structured CRM update proposals, follow-up tasks, and searchable customer memory.
 
 The ideal product vision is simple: a sales rep sends a WhatsApp or Teams voice memo after a customer meeting, and the agent handles the CRM admin work. For this MVP, the workflow is implemented in a local web app: the user pastes a meeting note or uploads/uses a transcript, the LLM extracts structured CRM information, the app validates it against local CRM data, and the user approves the proposed update before anything is written to the database.
 
@@ -28,11 +28,11 @@ The important responsible-AI angle is the **illusion gap**: the system may look 
 
 ### Product name
 
-**RepLog AI**
+**Close Loop**
 
 ### One-sentence pitch
 
-> RepLog AI turns messy sales voice notes and meeting notes into structured CRM updates, follow-up tasks, and searchable customer memory — with confidence, evidence, and human approval before writeback.
+> Close Loop turns messy sales voice notes and meeting notes into structured CRM updates, follow-up tasks, and searchable customer memory — with confidence, evidence, and human approval before writeback.
 
 ### Target users
 
@@ -86,7 +86,7 @@ This creates several business problems:
 - Sales managers lack accurate pipeline visibility.
 - CRM data quality declines over time.
 
-RepLog AI addresses this by converting unstructured meeting notes into structured CRM actions, while keeping the human in control.
+Close Loop addresses this by converting unstructured meeting notes into structured CRM actions, while keeping the human in control.
 
 ---
 
@@ -272,7 +272,7 @@ Avoid unnecessary production complexity:
 ## 9. Suggested Repository Structure
 
 ```text
-replog-ai/
+close-loop/
   README.md
   PROJECT_BRIEF.md
   AGENTS.md

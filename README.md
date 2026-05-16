@@ -1,12 +1,12 @@
-# RepLog AI
+# Close Loop
 
-RepLog AI is a Streamlit MVP for an AI-assisted CRM admin workflow. It turns messy sales meeting notes or transcripts into structured CRM update proposals, validates them against a local SQLite CRM, asks for human approval, and only then writes approved changes to the database.
+Close Loop is a Streamlit MVP for an AI-assisted CRM admin workflow. It turns messy sales meeting notes or transcripts into structured CRM update proposals, validates them against a local SQLite CRM, asks for human approval, and only then writes approved changes to the database.
 
 The core product idea is simple: the AI helps sales teams avoid manual CRM admin, but it does not silently mutate CRM records.
 
 ## What The App Does
 
-RepLog AI supports one clean demo flow:
+Close Loop supports one clean demo flow:
 
 ```text
 Paste meeting note
@@ -36,7 +36,7 @@ The user experience stays simple: paste a note, review the proposed update, appr
 
 ## Agentic Workflow
 
-RepLog AI uses a five-agent backend workflow.
+Close Loop uses a five-agent backend workflow.
 
 ### Agent 1: Extraction Agent
 
@@ -128,7 +128,7 @@ It does not mutate data.
 
 ## Reliability Controls
 
-RepLog AI separates warnings from hard blockers.
+Close Loop separates warnings from hard blockers.
 
 Approval is blocked when:
 
@@ -140,7 +140,7 @@ Approval is blocked when:
 
 Low model confidence does not automatically block the whole review. Instead, it raises the review risk level and keeps the human in control.
 
-Stage updates are safer than meeting-log writeback. If the meeting is approved but the suggested stage movement is invalid, RepLog AI still writes the approved meeting log, tasks, and audit entry, but skips the pipeline stage update and records why it was skipped.
+Stage updates are safer than meeting-log writeback. If the meeting is approved but the suggested stage movement is invalid, Close Loop still writes the approved meeting log, tasks, and audit entry, but skips the pipeline stage update and records why it was skipped.
 
 The audit trail separates:
 
@@ -224,7 +224,7 @@ The repository also includes a small labeled reliability fixture in `evals/meeti
 The data exploration is documented in:
 
 ```text
-notebooks/replog_ai_data_eda.ipynb
+notebooks/close_loop_data_eda.ipynb
 docs/DATA_EDA.md
 ```
 
@@ -350,7 +350,7 @@ tests/                  Data and agent tests
 
 ## Current Limitations
 
-RepLog AI is an MVP. It does not include:
+Close Loop is an MVP. It does not include:
 
 - Salesforce, HubSpot, or Dynamics integration
 - WhatsApp or voice ingestion
@@ -375,4 +375,4 @@ The highest-value next steps are:
 
 ## Design Principle
 
-RepLog AI is not an autonomous CRM mutation bot. It is an AI-assisted CRM admin system with human approval, evidence, validation, and auditability built into the workflow.
+Close Loop is not an autonomous CRM mutation bot. It is an AI-assisted CRM admin system with human approval, evidence, validation, and auditability built into the workflow.

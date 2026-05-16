@@ -217,7 +217,7 @@ def retrieve_context(conn: sqlite3.Connection, question: str) -> list[CRMChatCon
 def _build_chat_prompt(question: str, contexts: list[CRMChatContext]) -> str:
     context_json = json.dumps([context.model_dump() for context in contexts], indent=2)
     return f"""
-You are Agent #5, the RepLog AI Ask-CRM agent.
+You are Agent #5, the Close Loop Ask-CRM agent.
 
 Answer the user's CRM question in a natural, conversational style. Use only the retrieved CRM context below.
 Do not invent people, accounts, tasks, opportunities, or dates. If the context is insufficient, say what is missing

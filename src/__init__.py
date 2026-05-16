@@ -1,2 +1,2 @@
-"""RepLog AI application package."""
+"""Close Loop application package."""
 

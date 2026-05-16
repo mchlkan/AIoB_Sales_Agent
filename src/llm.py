@@ -230,7 +230,7 @@ class LLMClient:
         task: ModelTask,
     ) -> LLMResponse:
         repair_prompt = f"""
-You are repairing a JSON response for RepLog AI.
+You are repairing a JSON response for Close Loop.
 
 Return only valid JSON that satisfies the original requested schema.
 Do not add markdown or commentary.

@@ -16,7 +16,7 @@ from src.schemas import MatchResult, ReviewPackage, ValidationResult
 from src.validation import ValidationAgent
 
 
-st.set_page_config(page_title="RepLog AI", page_icon="RL", layout="wide")
+st.set_page_config(page_title="Close Loop", page_icon="CL", layout="wide")
 
 
 def ensure_db() -> None:
@@ -213,7 +213,7 @@ def render_hero() -> None:
     st.markdown(
         """
         <div class="hero">
-            <h1>RepLog AI</h1>
+            <h1>Close Loop</h1>
             <p>Turn meeting notes into reviewed CRM updates, follow-up tasks, and searchable account memory.</p>
         </div>
         """,
@@ -672,7 +672,7 @@ def main() -> None:
     inject_css()
 
     with st.sidebar:
-        st.markdown("### RepLog AI")
+        st.markdown("### Close Loop")
         page = st.radio(
             "Navigation",
             ["Workspace", "CRM Overview", "Data Deep Dive", "Activity"],
