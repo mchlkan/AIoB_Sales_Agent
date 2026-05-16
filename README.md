@@ -547,3 +547,5 @@ The current goal is a reliable, end-to-end local demo of the agentic CRM workflo
 > Close Loop is not an autonomous CRM mutation bot. It is an AI-assisted CRM admin system with evidence, validation, human approval, and auditability built into the workflow.
 
 The AI proposes. The human approves. Every decision is logged.
+
+*AI disclosure: Claude Code (Opus 4.7) was used as a coding assistant for the repository setup, the agentic workflow implementation, and the test suite. All conceptual work, problem definition, agentic design, and feature scoping, was done by the team.* 
