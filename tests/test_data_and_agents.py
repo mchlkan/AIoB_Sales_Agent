@@ -22,10 +22,6 @@ def empty_settings() -> Settings:
         gemini_model="gemini-2.5-flash-lite",
         groq_api_key="",
         groq_model="qwen/qwen3-32b",
-        openrouter_api_key="",
-        openrouter_model="",
-        ollama_base_url="",
-        ollama_model="",
     )
 
 

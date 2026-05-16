@@ -4,7 +4,7 @@ import json
 import sqlite3
 from typing import Any
 
-from src.config import Settings, load_settings
+from src.config import PROMPTS_DIR, Settings, load_settings
 from src.llm import LLMClient, LLMError, PROMPT_VERSIONS
 from src.schemas import CRMChatContext, CRMChatIntent, ModelRun
 
@@ -216,21 +216,9 @@ def retrieve_context(conn: sqlite3.Connection, question: str) -> list[CRMChatCon
 
 def _build_chat_prompt(question: str, contexts: list[CRMChatContext]) -> str:
     context_json = json.dumps([context.model_dump() for context in contexts], indent=2)
-    return f"""
-You are Agent #5, the Close Loop Ask-CRM agent.
-
-Answer the user's CRM question in a natural, conversational style. Use only the retrieved CRM context below.
-Do not invent people, accounts, tasks, opportunities, or dates. If the context is insufficient, say what is missing
-and suggest the closest CRM question you can answer from the available records.
-
-Prefer one concise paragraph. Use bullets only when the user asks for a list or when there are many concrete items.
-
-Question:
-{question}
-
-Retrieved CRM context:
-{context_json}
-""".strip()
+    template_path = PROMPTS_DIR / "crm_chat.md"
+    template = template_path.read_text(encoding="utf-8") if template_path.exists() else "{question}\n{context_json}"
+    return template.format(question=question, context_json=context_json).strip()
 
 
 def _rows(conn: sqlite3.Connection, query: str) -> list[dict[str, Any]]:
