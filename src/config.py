@@ -25,15 +25,30 @@ class Settings:
     groq_model: str
 
 
+def _read(key: str, default: str = "") -> str:
+    value = os.getenv(key, "").strip()
+    if value:
+        return value
+    try:
+        import streamlit as st
+
+        secret = st.secrets.get(key)
+        if secret is not None and str(secret).strip():
+            return str(secret).strip()
+    except Exception:
+        pass
+    return default
+
+
 def load_settings() -> Settings:
     load_dotenv(ROOT_DIR / ".env")
     return Settings(
-        model_provider=os.getenv("MODEL_PROVIDER", "gemini").strip().lower(),
-        demo_fallback_enabled=os.getenv("DEMO_FALLBACK_ENABLED", "true").strip().lower()
+        model_provider=_read("MODEL_PROVIDER", "gemini").lower(),
+        demo_fallback_enabled=_read("DEMO_FALLBACK_ENABLED", "true").lower()
         in {"1", "true", "yes", "on"},
-        gemini_api_key=os.getenv("GEMINI_API_KEY", "").strip(),
-        gemini_model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite").strip(),
-        groq_api_key=os.getenv("GROQ_API_KEY", "").strip(),
-        groq_model=os.getenv("GROQ_MODEL", "qwen/qwen3-32b").strip(),
+        gemini_api_key=_read("GEMINI_API_KEY"),
+        gemini_model=_read("GEMINI_MODEL", "gemini-2.5-flash-lite"),
+        groq_api_key=_read("GROQ_API_KEY"),
+        groq_model=_read("GROQ_MODEL", "qwen/qwen3-32b"),
     )
 
