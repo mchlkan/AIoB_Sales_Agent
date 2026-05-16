@@ -5,8 +5,8 @@ import sqlite3
 from typing import Any
 
 from src.config import Settings, load_settings
-from src.llm import LLMClient, LLMError
-from src.schemas import CRMChatContext, ModelRun
+from src.llm import LLMClient, LLMError, PROMPT_VERSIONS
+from src.schemas import CRMChatContext, CRMChatIntent, ModelRun
 
 
 def answer_question(conn: sqlite3.Connection, question: str) -> str:
@@ -19,7 +19,30 @@ def answer_question_with_metadata(
     question: str,
     settings: Settings | None = None,
 ) -> tuple[str, ModelRun]:
+    intent = classify_intent(question)
+    if intent == "unknown":
+        return (
+            _fallback_answer(conn, question, intent),
+            ModelRun(
+                task="crm_chat",
+                provider="chat_fallback",
+                model="rule_based",
+                fallback_used=True,
+                prompt_version=PROMPT_VERSIONS["crm_chat"],
+            ),
+        )
     contexts = retrieve_context(conn, question)
+    if not contexts or not any(context.rows for context in contexts):
+        return (
+            _fallback_answer(conn, question, intent),
+            ModelRun(
+                task="crm_chat",
+                provider="chat_fallback",
+                model="rule_based",
+                fallback_used=True,
+                prompt_version=PROMPT_VERSIONS["crm_chat"],
+            ),
+        )
     prompt = _build_chat_prompt(question, contexts)
     settings = settings or load_settings()
     try:
@@ -28,6 +51,7 @@ def answer_question_with_metadata(
             task="crm_chat",
             preferred_provider="gemini",
             json_mode=False,
+            prompt_version=PROMPT_VERSIONS["crm_chat"],
         )
         return (
             response.text.strip(),
@@ -36,29 +60,52 @@ def answer_question_with_metadata(
                 provider=response.provider,
                 model=response.model,
                 fallback_used=response.fallback_used,
+                repair_used=response.repair_used,
+                prompt_version=response.prompt_version,
+                latency_ms=response.latency_ms,
+                attempts=response.attempts or [],
             ),
         )
     except LLMError as exc:
         return (
-            _fallback_answer(conn, question),
+            _fallback_answer(conn, question, intent),
             ModelRun(
                 task="crm_chat",
                 provider="chat_fallback",
                 model="rule_based",
                 fallback_used=True,
+                prompt_version=PROMPT_VERSIONS["crm_chat"],
                 error=str(exc),
             ),
         )
 
 
-def retrieve_context(conn: sqlite3.Connection, question: str) -> list[CRMChatContext]:
+def classify_intent(question: str) -> CRMChatIntent:
     q = question.lower()
+    if any(word in q for word in ["attend", "attendee", "joined", "who was", "who were"]):
+        return "attendees"
+    if any(word in q for word in ["task", "follow", "owner", "due", "next step"]):
+        return "tasks"
+    if any(word in q for word in ["risk", "objection", "competitor", "delivery", "security", "budget"]):
+        return "risks"
+    if any(word in q for word in ["pipeline", "open", "deal", "opportunity", "stage", "won", "lost"]):
+        return "pipeline"
+    if any(word in q for word in ["approve", "approved", "reject", "rejected", "audit", "changed", "change"]):
+        return "audit"
+    if any(word in q for word in ["meeting", "summary", "recent", "latest"]):
+        return "recent_meetings"
+    return "unknown"
+
+
+def retrieve_context(conn: sqlite3.Connection, question: str) -> list[CRMChatContext]:
+    intent = classify_intent(question)
     contexts: list[CRMChatContext] = []
 
-    if any(word in q for word in ["attend", "attendee", "joined", "meeting", "summary", "recent"]):
+    if intent == "attendees":
         contexts.append(
             CRMChatContext(
                 source="recent_meeting_logs",
+                intent=intent,
                 rows=_rows(
                     conn,
                     """
@@ -72,10 +119,11 @@ def retrieve_context(conn: sqlite3.Connection, question: str) -> list[CRMChatCon
             )
         )
 
-    if any(word in q for word in ["task", "follow", "owner", "due", "next step"]):
+    elif intent == "tasks":
         contexts.append(
             CRMChatContext(
                 source="tasks",
+                intent=intent,
                 rows=_rows(
                     conn,
                     """
@@ -89,10 +137,11 @@ def retrieve_context(conn: sqlite3.Connection, question: str) -> list[CRMChatCon
             )
         )
 
-    if any(word in q for word in ["pipeline", "open", "deal", "opportunity", "stage", "won", "lost"]):
+    elif intent == "pipeline":
         contexts.append(
             CRMChatContext(
                 source="pipeline_summary",
+                intent=intent,
                 rows=_rows(
                     conn,
                     """
@@ -106,10 +155,11 @@ def retrieve_context(conn: sqlite3.Connection, question: str) -> list[CRMChatCon
             )
         )
 
-    if any(word in q for word in ["risk", "objection", "competitor", "delivery", "security", "budget"]):
+    elif intent == "risks":
         contexts.append(
             CRMChatContext(
                 source="risk_meeting_logs",
+                intent=intent,
                 rows=_rows(
                     conn,
                     """
@@ -128,10 +178,11 @@ def retrieve_context(conn: sqlite3.Connection, question: str) -> list[CRMChatCon
             )
         )
 
-    if any(word in q for word in ["approve", "approved", "reject", "rejected", "audit", "changed"]):
+    elif intent == "audit":
         contexts.append(
             CRMChatContext(
                 source="audit_log",
+                intent=intent,
                 rows=_rows(
                     conn,
                     """
@@ -144,10 +195,11 @@ def retrieve_context(conn: sqlite3.Connection, question: str) -> list[CRMChatCon
             )
         )
 
-    if not contexts:
+    elif intent == "recent_meetings":
         contexts = [
             CRMChatContext(
                 source="recent_meeting_logs",
+                intent=intent,
                 rows=_rows(
                     conn,
                     """
@@ -157,21 +209,7 @@ def retrieve_context(conn: sqlite3.Connection, question: str) -> list[CRMChatCon
                     LIMIT 5
                     """,
                 ),
-            ),
-            CRMChatContext(
-                source="open_pipeline",
-                rows=_rows(
-                    conn,
-                    """
-                    SELECT account, product, sales_agent, deal_stage, COUNT(*) AS count
-                    FROM sales_pipeline
-                    WHERE deal_stage IN ('Prospecting', 'Engaging', 'Proposal')
-                    GROUP BY account, product, sales_agent, deal_stage
-                    ORDER BY count DESC
-                    LIMIT 10
-                    """,
-                ),
-            ),
+            )
         ]
     return contexts
 
@@ -199,9 +237,9 @@ def _rows(conn: sqlite3.Connection, query: str) -> list[dict[str, Any]]:
     return [dict(row) for row in conn.execute(query).fetchall()]
 
 
-def _fallback_answer(conn: sqlite3.Connection, question: str) -> str:
-    q = question.lower()
-    if any(word in q for word in ["attend", "attended", "attendee", "joined", "who was", "who were"]):
+def _fallback_answer(conn: sqlite3.Connection, question: str, intent: CRMChatIntent | None = None) -> str:
+    intent = intent or classify_intent(question)
+    if intent == "attendees":
         rows = conn.execute(
             """
             SELECT account_name, opportunity_id, attendees, summary, created_at
@@ -240,7 +278,7 @@ def _fallback_answer(conn: sqlite3.Connection, question: str) -> str:
             "Approve a new note with attendees and I will be able to answer this cleanly."
         )
 
-    if "delivery" in q or "risk" in q or "objection" in q:
+    if intent == "risks":
         rows = conn.execute(
             """
             SELECT account_name, opportunity_id, summary, objections, created_at
@@ -270,7 +308,7 @@ def _fallback_answer(conn: sqlite3.Connection, question: str) -> str:
             f"There are also similar notes for {_join_names([row['account_name'] for row in rows[1:]])}."
         )
 
-    if "task" in q or "follow" in q:
+    if intent == "tasks":
         rows = conn.execute(
             """
             SELECT account_name, opportunity_id, task_description, owner, due_date, status
@@ -294,7 +332,7 @@ def _fallback_answer(conn: sqlite3.Connection, question: str) -> str:
             ) + "."
         return response
 
-    if "open" in q or "pipeline" in q:
+    if intent == "pipeline":
         rows = conn.execute(
             """
             SELECT account, product, sales_agent, deal_stage, COUNT(*) AS count
@@ -316,7 +354,7 @@ def _fallback_answer(conn: sqlite3.Connection, question: str) -> str:
             f"owned by {first['sales_agent']}."
         )
 
-    if "recent" in q or "meeting" in q or "summary" in q:
+    if intent == "recent_meetings":
         rows = conn.execute(
             """
             SELECT account_name, opportunity_id, summary, created_at
@@ -339,9 +377,23 @@ def _fallback_answer(conn: sqlite3.Connection, question: str) -> str:
             f"I also found recent approved meetings for {_join_names([row['account_name'] for row in rows[1:]])}."
         )
 
+    if intent == "audit":
+        rows = conn.execute(
+            """
+            SELECT created_at, decision, applied_changes_json
+            FROM audit_log
+            ORDER BY created_at DESC
+            LIMIT 1
+            """
+        ).fetchall()
+        if not rows:
+            return "I do not see any approval or rejection decisions in the audit log yet."
+        row = rows[0]
+        return f"The latest audit entry was {row['decision']} at {row['created_at']}. The recorded change payload is {row['applied_changes_json']}."
+
     return (
-        "I can help with the CRM memory that has been approved so far. Try asking who attended the latest meeting, "
-        "what follow-up tasks are open, which meetings mentioned delivery risk, or what open pipeline looks like."
+        "I cannot answer that from the current CRM tables. I can help with approved meetings, attendees, "
+        "follow-up tasks, risks, open pipeline, or recent approval history."
     )
 
 

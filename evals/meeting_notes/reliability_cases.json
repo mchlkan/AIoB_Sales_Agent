@@ -1,0 +1,77 @@
+[
+  {
+    "id": "clean_extraction",
+    "note": "Call with Acme Corporation about GTX Pro. Zane Levy joined and procurement asked for a revised quote by Friday. Move the opportunity to Proposal.",
+    "expected": {"account": "Acme Corporation", "product": "GTX Pro", "opportunity_behavior": "matched", "required_blockers": [], "task_count": 1, "stage_update_allowed": true}
+  },
+  {
+    "id": "ambiguous_account",
+    "note": "Call with Acme about GTX Pro. The buyer wants a proposal but the account name was shortened in the note.",
+    "expected": {"account": "Acme Corporation", "product": "GTX Pro", "opportunity_behavior": "matched_with_warning", "required_blockers": [], "task_count": 0, "stage_update_allowed": true}
+  },
+  {
+    "id": "unknown_account",
+    "note": "Call with Northwind Labs about GTX Pro. They asked for pricing and a follow-up next week.",
+    "expected": {"account": null, "product": "GTX Pro", "opportunity_behavior": "blocked_missing_account", "required_blockers": ["account", "opportunity"], "task_count": 1, "stage_update_allowed": true}
+  },
+  {
+    "id": "product_alias_gtxpro",
+    "note": "Acme Corporation asked about GTXPro and wants Zane Levy to send a quote.",
+    "expected": {"account": "Acme Corporation", "product": "GTX Pro", "opportunity_behavior": "alias_resolved", "required_blockers": [], "task_count": 1, "stage_update_allowed": true}
+  },
+  {
+    "id": "missing_product",
+    "note": "Acme Corporation wants to discuss the renewal, but the rep did not capture which product was discussed.",
+    "expected": {"account": "Acme Corporation", "product": null, "opportunity_behavior": "blocked_missing_product", "required_blockers": ["products", "opportunity"], "task_count": 0, "stage_update_allowed": true}
+  },
+  {
+    "id": "invalid_stage_movement",
+    "note": "Ganjaflex discussed MG Advanced with Maureen Marcano. The note suggests moving the existing Engaging opportunity back to Prospecting.",
+    "expected": {"account": "Ganjaflex", "product": "MG Advanced", "opportunity_behavior": "matched_stage_blocked", "required_blockers": [], "task_count": 0, "stage_update_allowed": false}
+  },
+  {
+    "id": "delivery_risk",
+    "note": "Acme Corporation likes GTX Pro, but procurement raised delivery risk if the rollout misses the June warehouse window. Send a delivery plan.",
+    "expected": {"account": "Acme Corporation", "product": "GTX Pro", "opportunity_behavior": "matched", "required_blockers": [], "task_count": 1, "stage_update_allowed": true}
+  },
+  {
+    "id": "competitor_objection",
+    "note": "Cheers compared GTX Basic against a competitor and asked for proof that support response times are better.",
+    "expected": {"account": "Cheers", "product": "GTX Basic", "opportunity_behavior": "matched_or_warning", "required_blockers": [], "task_count": 0, "stage_update_allowed": true}
+  },
+  {
+    "id": "budget_approval",
+    "note": "Bluth Company confirmed budget approval for MG Advanced. The buyer wants the final quote and legal packet.",
+    "expected": {"account": "Bluth Company", "product": "MG Advanced", "opportunity_behavior": "matched_or_warning", "required_blockers": [], "task_count": 1, "stage_update_allowed": true}
+  },
+  {
+    "id": "buying_signal",
+    "note": "Bubba Gump said they are ready to move forward with GTK 500 if implementation can start this month.",
+    "expected": {"account": "Bubba Gump", "product": "GTK 500", "opportunity_behavior": "matched_or_warning", "required_blockers": [], "task_count": 0, "stage_update_allowed": true}
+  },
+  {
+    "id": "task_with_owner",
+    "note": "Codehow reviewed GTX Basic. Owner: Zane Levy should schedule the technical workshop by Monday.",
+    "expected": {"account": "Codehow", "product": "GTX Basic", "opportunity_behavior": "matched_or_warning", "required_blockers": [], "task_count": 1, "stage_update_allowed": true}
+  },
+  {
+    "id": "task_without_owner",
+    "note": "Cancity discussed GTX Plus Basic and asked us to send a pricing summary before Friday.",
+    "expected": {"account": "Cancity", "product": "GTX Plus Basic", "opportunity_behavior": "matched_or_warning", "required_blockers": [], "task_count": 1, "stage_update_allowed": true}
+  },
+  {
+    "id": "multiple_attendees",
+    "note": "Acme Corporation met about GTX Pro. Zane Levy, Sarah from procurement, and James from infrastructure joined.",
+    "expected": {"account": "Acme Corporation", "product": "GTX Pro", "opportunity_behavior": "matched", "required_blockers": [], "task_count": 0, "stage_update_allowed": true}
+  },
+  {
+    "id": "low_confidence_vague_note",
+    "note": "Good call. They may want to buy soon. Follow up later.",
+    "expected": {"account": null, "product": null, "opportunity_behavior": "blocked_vague_note", "required_blockers": ["account", "products", "opportunity"], "task_count": 1, "stage_update_allowed": true}
+  },
+  {
+    "id": "hallucination_trap",
+    "note": "Acme Corporation only asked for an internal recap. The note does not mention a product, quote, task owner, or stage movement.",
+    "expected": {"account": "Acme Corporation", "product": null, "opportunity_behavior": "critic_should_flag_unsupported_product_or_stage", "required_blockers": ["products", "opportunity"], "task_count": 0, "stage_update_allowed": true}
+  }
+]
