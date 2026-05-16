@@ -54,11 +54,12 @@ def inject_css() -> None:
     st.markdown(
         """
         <style>
-        .stApp {background: #f3f5f7;}
+        /* ------- Base canvas ------- */
+        .stApp {background: #ffffff;}
         .block-container {
             padding-top: 2rem;
-            max-width: 1240px;
-            color: #111827 !important;
+            max-width: 1280px;
+            color: #0f172a !important;
         }
         .block-container h1,
         .block-container h2,
@@ -67,141 +68,259 @@ def inject_css() -> None:
         .block-container p,
         .block-container span,
         .block-container label {
-            color: #111827 !important;
+            color: #0f172a !important;
         }
+
+        /* ------- Sidebar ------- */
         [data-testid="stSidebar"] {
-            background: #1f2937;
-            border-right: 1px solid #374151;
+            background: #fafbfc;
+            border-right: 1px solid #e2e8f0;
         }
         [data-testid="stSidebar"] h1,
         [data-testid="stSidebar"] h2,
         [data-testid="stSidebar"] h3,
         [data-testid="stSidebar"] p,
         [data-testid="stSidebar"] span,
-        [data-testid="stSidebar"] label {color: #f9fafb !important;}
-        [data-testid="stSidebar"] [role="radiogroup"] label {
-            background: transparent;
-            border-radius: 8px;
-            padding: 8px 10px;
+        [data-testid="stSidebar"] label {color: #0f172a !important;}
+
+        .nav-brand {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #2563eb !important;
+            letter-spacing: -0.02em;
+            padding: 4px 4px 18px 4px;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 12px;
         }
+        .nav-tagline {
+            font-size: 0.78rem;
+            color: #64748b !important;
+            font-weight: 500;
+            margin-top: -10px;
+            margin-bottom: 18px;
+        }
+
+        /* Sidebar nav buttons override generic button styling */
+        [data-testid="stSidebar"] .stButton > button {
+            background: transparent !important;
+            border: none !important;
+            color: #475569 !important;
+            text-align: left !important;
+            justify-content: flex-start !important;
+            font-weight: 500 !important;
+            padding: 10px 14px !important;
+            border-radius: 8px !important;
+            box-shadow: none !important;
+            font-size: 0.95rem !important;
+            width: 100%;
+        }
+        [data-testid="stSidebar"] .stButton > button:hover {
+            background: #f1f5f9 !important;
+            color: #0f172a !important;
+        }
+        [data-testid="stSidebar"] .stButton > button[kind="primary"] {
+            background: #eff6ff !important;
+            color: #2563eb !important;
+            font-weight: 700 !important;
+            border-left: 3px solid #2563eb !important;
+            padding-left: 11px !important;
+        }
+        [data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
+            background: #dbeafe !important;
+            color: #1d4ed8 !important;
+        }
+
+        /* ------- Form inputs ------- */
         [data-testid="stTextInput"] input,
         [data-testid="stTextArea"] textarea,
         [data-testid="stSelectbox"] div[data-baseweb="select"] > div,
         [data-testid="stMultiSelect"] div[data-baseweb="select"] > div {
             background: #ffffff !important;
-            color: #111827 !important;
-            border: 1px solid #9ca3af !important;
+            color: #0f172a !important;
+            border: 1px solid #cbd5e1 !important;
             border-radius: 8px !important;
+        }
+        [data-testid="stTextInput"] input:focus,
+        [data-testid="stTextArea"] textarea:focus {
+            border-color: #2563eb !important;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
         }
         [data-testid="stTextInput"] input *,
         [data-testid="stTextArea"] textarea *,
         [data-testid="stSelectbox"] *,
         [data-testid="stMultiSelect"] * {
-            color: #111827 !important;
+            color: #0f172a !important;
         }
         [data-testid="stTextInput"] input::placeholder,
         [data-testid="stTextArea"] textarea::placeholder {
-            color: #6b7280 !important;
+            color: #94a3b8 !important;
             opacity: 1 !important;
         }
         [data-testid="stTextInput"] label,
         [data-testid="stTextArea"] label,
         [data-testid="stSelectbox"] label,
         [data-testid="stMultiSelect"] label {
-            color: #1f2937 !important;
+            color: #334155 !important;
             font-weight: 600;
         }
         [data-baseweb="popover"],
         [data-baseweb="menu"] {
             background: #ffffff !important;
-            color: #111827 !important;
+            color: #0f172a !important;
         }
+
+        /* ------- Metrics ------- */
         [data-testid="stMetric"] {
             background: #ffffff;
-            border: 1px solid #cfd7e2;
-            border-radius: 8px;
-            padding: 14px 16px;
-            box-shadow: 0 2px 8px rgba(16, 24, 40, 0.06);
+            border: 1px solid #e2e8f0;
+            border-top: 3px solid #2563eb;
+            border-radius: 10px;
+            padding: 16px 18px;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
         }
-        [data-testid="stMetric"] * {
-            color: #111827 !important;
-        }
+        [data-testid="stMetric"] * {color: #0f172a !important;}
         [data-testid="stMetricLabel"] p {
-            color: #4b5563 !important;
+            color: #64748b !important;
             font-weight: 600;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
         [data-testid="stMetricValue"] div {
-            color: #111827 !important;
-            font-weight: 700;
+            color: #0f172a !important;
+            font-weight: 800;
         }
+
+        /* ------- Hero ------- */
         .hero {
-            border: 1px solid #293548;
-            border-radius: 8px;
-            padding: 22px 24px;
-            background: linear-gradient(135deg, #111827 0%, #243447 100%);
-            margin-bottom: 16px;
-            box-shadow: 0 6px 20px rgba(16, 24, 40, 0.12);
+            border: none;
+            border-radius: 14px;
+            padding: 30px 34px;
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            margin-bottom: 20px;
+            box-shadow: 0 10px 28px rgba(37, 99, 235, 0.20);
+            position: relative;
+            overflow: hidden;
         }
-        .hero h1 {font-size: 2rem; margin: 0 0 4px 0; color: #ffffff !important;}
-        .hero p {margin: 0; color: #cbd5e1 !important;}
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            width: 180px;
+            height: 180px;
+            background: rgba(245, 158, 11, 0.25);
+            border-radius: 50%;
+            filter: blur(2px);
+        }
+        .hero h1 {
+            font-size: 2.2rem;
+            margin: 0 0 6px 0;
+            color: #ffffff !important;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            position: relative;
+        }
+        .hero p {
+            margin: 0;
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-size: 1.02rem;
+            position: relative;
+        }
+
+        /* ------- Field cards ------- */
         .field-card {
-            border: 1px solid #d0d7e2;
-            border-left: 5px solid #2f7d5b;
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid #2563eb;
             background: #fff;
-            border-radius: 8px;
-            padding: 12px 14px;
-            min-height: 88px;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 7px rgba(16, 24, 40, 0.06);
+            border-radius: 10px;
+            padding: 14px 16px;
+            min-height: 92px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
         }
-        .field-card.missing {border-left-color: #b54708; background: #fffaf5;}
-        .field-card.optional {border-left-color: #667085;}
-        .field-label {font-size: .76rem; font-weight: 700; color: #596579; text-transform: uppercase; letter-spacing: .04em;}
-        .field-value {font-size: .98rem; color: #111827; margin-top: 6px; line-height: 1.35;}
-        .field-value.muted {color: #8a94a6;}
+        .field-card.missing {
+            border-left-color: #ea580c;
+            background: #fff7ed;
+        }
+        .field-card.optional {border-left-color: #cbd5e1;}
+        .field-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .field-value {
+            font-size: 1rem;
+            color: #0f172a;
+            margin-top: 6px;
+            line-height: 1.4;
+        }
+        .field-value.muted {color: #94a3b8;}
+
+        /* ------- Pills ------- */
         .pill {
             display: inline-block;
             border-radius: 999px;
-            padding: 3px 9px;
-            font-size: .78rem;
+            padding: 3px 10px;
+            font-size: 0.74rem;
             font-weight: 700;
             margin-top: 8px;
         }
-        .pill.good {background: #eef8f2; color: #1f6f4a;}
-        .pill.bad {background: #fff4ed; color: #b54708;}
-        .pill.neutral {background: #eef2f6; color: #475467;}
+        .pill.good {background: #eff6ff; color: #2563eb;}
+        .pill.bad {background: #fff7ed; color: #ea580c;}
+        .pill.neutral {background: #f1f5f9; color: #64748b;}
+
+        /* ------- Answer & correction boxes ------- */
         .answer-box {
-            border: 1px solid #cfd7e2;
+            border: 1px solid #e2e8f0;
+            border-left: 3px solid #7c3aed;
             background: #ffffff;
-            border-radius: 8px;
-            padding: 14px 16px;
+            border-radius: 10px;
+            padding: 16px 18px;
             margin-top: 12px;
-            color: #1f2937;
-            line-height: 1.5;
-            box-shadow: 0 2px 7px rgba(16, 24, 40, 0.06);
+            color: #0f172a;
+            line-height: 1.55;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
         }
         .correction-box {
-            border: 1px solid #cfd7e2;
-            border-radius: 8px;
-            padding: 10px 12px;
-            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px 14px;
+            background: #fafbfc;
             margin: -4px 0 12px 0;
         }
         .section-card {
-            border: 1px solid #cfd7e2;
-            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
             padding: 16px;
             background: #fff;
         }
+
+        /* ------- Content-area buttons ------- */
         .stButton > button {
             border-radius: 8px;
             font-weight: 700;
         }
+        .stButton > button[kind="primary"] {
+            background: #2563eb;
+            border-color: #2563eb;
+        }
+        .stButton > button[kind="primary"]:hover {
+            background: #1d4ed8;
+            border-color: #1d4ed8;
+        }
         .stButton > button:disabled {
-            background: #e5e7eb !important;
-            color: #6b7280 !important;
-            border: 1px solid #d1d5db !important;
+            background: #f1f5f9 !important;
+            color: #94a3b8 !important;
+            border: 1px solid #e2e8f0 !important;
             opacity: 1 !important;
+        }
+
+        /* ------- Progress bar ------- */
+        [data-testid="stProgress"] > div > div > div > div {
+            background: linear-gradient(90deg, #2563eb 0%, #7c3aed 100%);
         }
         </style>
         """,
@@ -671,13 +790,29 @@ def main() -> None:
     ensure_db()
     inject_css()
 
+    if "page" not in st.session_state:
+        st.session_state["page"] = "Workspace"
+
+    pages = ["Workspace", "CRM Overview", "Data Deep Dive", "Activity"]
+
     with st.sidebar:
-        st.markdown("### Close Loop")
-        page = st.radio(
-            "Navigation",
-            ["Workspace", "CRM Overview", "Data Deep Dive", "Activity"],
-            label_visibility="collapsed",
+        st.markdown("<div class='nav-brand'>Close Loop</div>", unsafe_allow_html=True)
+        st.markdown(
+            "<div class='nav-tagline'>The AI drafts. The human commits.</div>",
+            unsafe_allow_html=True,
         )
+        for label in pages:
+            is_active = st.session_state["page"] == label
+            if st.button(
+                label,
+                key=f"nav_{label.replace(' ', '_').lower()}",
+                type="primary" if is_active else "secondary",
+                use_container_width=True,
+            ):
+                st.session_state["page"] = label
+                st.rerun()
+
+    page = st.session_state["page"]
 
     if page == "Workspace":
         render_workspace()
