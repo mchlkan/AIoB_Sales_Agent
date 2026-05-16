@@ -4,6 +4,7 @@ import json
 import sqlite3
 from typing import Any
 
+from src.matching import can_advance_stage
 from src.schemas import Decision, ReviewPackage
 from src.schemas import WritebackOperation, WritebackPlan
 
@@ -21,6 +22,8 @@ class WritebackAgent:
             self._write_audit(conn, review, decision, applied, writeback_plan)
             conn.commit()
             return applied
+        if not review.validation.is_approvable:
+            raise ValueError("Cannot approve a review with unresolved blocking reasons.")
 
         proposal = review.proposal
         matched = review.validation.matched
@@ -70,7 +73,15 @@ class WritebackAgent:
             task_ids.append(task_id)
 
         stage_change = None
-        if matched.opportunity_id and proposal.suggested_stage:
+        skipped_stage_update = None
+        deterministic_stage_allowed = can_advance_stage(matched.opportunity_stage, proposal.suggested_stage)
+        stage_allowed = (
+            review.validation.stage_update_allowed
+            and deterministic_stage_allowed
+            and bool(matched.opportunity_id)
+            and bool(proposal.suggested_stage)
+        )
+        if stage_allowed:
             current = conn.execute(
                 "SELECT deal_stage FROM sales_pipeline WHERE opportunity_id = ?",
                 (matched.opportunity_id,),
@@ -85,12 +96,20 @@ class WritebackAgent:
                 "previous_stage": previous_stage,
                 "new_stage": proposal.suggested_stage,
             }
+        elif matched.opportunity_id and proposal.suggested_stage:
+            skipped_stage_update = {
+                "opportunity_id": matched.opportunity_id,
+                "suggested_stage": proposal.suggested_stage,
+                "reason": review.validation.stage_update_blocked_reason
+                or "Stage update was not allowed by deterministic validation.",
+            }
 
         applied = {
             "status": "approved",
             "meeting_log_id": meeting_id,
             "task_ids": task_ids,
             "stage_change": stage_change,
+            "skipped_stage_update": skipped_stage_update,
             "writeback_plan": writeback_plan.model_dump(),
         }
         self._write_audit(conn, review, decision, applied, writeback_plan)
@@ -124,17 +143,30 @@ class WritebackAgent:
                 for task in review.proposal.next_steps
             ]
             if review.validation.matched.opportunity_id and review.proposal.suggested_stage:
-                operations.insert(
-                    -1,
-                    WritebackOperation(
-                        operation="update_opportunity_stage",
-                        target="sales_pipeline",
-                        summary=(
-                            f"Update {review.validation.matched.opportunity_id} "
-                            f"to {review.proposal.suggested_stage}."
+                if review.validation.stage_update_allowed:
+                    operations.insert(
+                        -1,
+                        WritebackOperation(
+                            operation="update_opportunity_stage",
+                            target="sales_pipeline",
+                            summary=(
+                                f"Update {review.validation.matched.opportunity_id} "
+                                f"to {review.proposal.suggested_stage}."
+                            ),
                         ),
-                    ),
-                )
+                    )
+                else:
+                    operations.insert(
+                        -1,
+                        WritebackOperation(
+                            operation="skip_opportunity_stage_update",
+                            target="sales_pipeline",
+                            summary=(
+                                review.validation.stage_update_blocked_reason
+                                or "Skip stage update because validation did not allow it."
+                            ),
+                        ),
+                    )
         return WritebackPlan(decision=decision, operations=operations)
 
     @staticmethod
@@ -156,8 +188,8 @@ class WritebackAgent:
             """,
             (
                 review.source_note,
-                review.proposal.model_dump_json(),
-                review.proposal.model_dump_json(),
+                (review.original_proposal or review.proposal).model_dump_json(),
+                review.proposal.model_dump_json() if decision == "approved" else None,
                 review.validation.model_dump_json(),
                 review.critic.model_dump_json() if review.critic else None,
                 decision,

@@ -398,7 +398,7 @@ def has_required_correction(field_key: str) -> bool:
 
 def corrected_review(review: ReviewPackage) -> ReviewPackage:
     proposal = review.proposal.model_copy(deep=True)
-    matched = review.validation.matched.model_copy(deep=True)
+    corrected_fields: set[str] = set()
 
     account = override_value("account")
     opportunity = override_value("opportunity")
@@ -410,25 +410,32 @@ def corrected_review(review: ReviewPackage) -> ReviewPackage:
     signals = override_value("signals")
 
     if isinstance(account, str):
-        matched.account_name = account
+        proposal.account_name = account
+        corrected_fields.add("account")
     if isinstance(opportunity, str):
-        matched.opportunity_id = opportunity
+        proposal.opportunity_id = opportunity
+        corrected_fields.add("opportunity")
     if isinstance(products, list):
-        matched.product_names = products
         proposal.products_discussed = products
+        corrected_fields.add("products")
     if isinstance(stage, str) and stage in {"Prospecting", "Engaging", "Proposal", "Won", "Lost"}:
         proposal.suggested_stage = stage
+        corrected_fields.add("stage")
     if isinstance(summary, str):
         proposal.meeting_summary = summary
+        corrected_fields.add("summary")
     if isinstance(attendees, list):
         proposal.attendees = attendees
+        corrected_fields.add("attendees")
     if isinstance(risks, list):
         proposal.objections_or_risks = risks
+        corrected_fields.add("risks")
     if isinstance(signals, list):
         proposal.buying_signals = signals
+        corrected_fields.add("signals")
 
-    validation = review.validation.model_copy(update={"matched": matched}, deep=True)
-    validation.is_approvable = bool(matched.account_name and matched.opportunity_id and matched.product_names)
+    with connect(DEFAULT_DB_PATH) as conn:
+        validation = ValidationAgent().validate(conn, proposal, review.critic, corrected_fields)
     return review.model_copy(update={"proposal": proposal, "validation": validation}, deep=True)
 
 
@@ -472,8 +479,16 @@ def render_review(review: ReviewPackage) -> None:
             with container:
                 key, label, value, mandatory = field
                 render_status_card(label, value, mandatory)
+                if key in review.validation.needs_correction:
+                    st.caption("Needs correction before approval.")
                 field_decision_buttons(key, locked=review_locked)
                 field_correction_controls(key, review, locked=review_locked)
+
+    if proposal.suggested_stage and matched.opportunity_id:
+        if review.validation.stage_update_allowed:
+            st.caption(f"Stage update: will update {matched.opportunity_id} to {proposal.suggested_stage}.")
+        else:
+            st.caption(f"Stage update: will not update. {review.validation.stage_update_blocked_reason}")
 
     st.markdown("**Follow-up tasks**")
     if proposal.next_steps:
@@ -520,6 +535,7 @@ def render_workspace() -> None:
                     validation = ValidationAgent().validate(conn, proposal, critic)
                 st.session_state["review"] = ReviewPackage(
                     proposal=proposal,
+                    original_proposal=proposal,
                     validation=validation,
                     source_note=note,
                     model_provider=extraction_run.provider,
@@ -547,17 +563,19 @@ def render_workspace() -> None:
     review = st.session_state.get("review")
     if review:
         st.divider()
-        render_review(review)
+        review_to_apply = corrected_review(review)
+        render_review(review_to_apply)
         rejected_fields = [
             key
             for key in ["account", "opportunity", "products", "summary"]
             if st.session_state.get(f"decision_{key}") == "rejected" and not has_required_correction(key)
         ]
         submitted = bool(st.session_state.get("last_writeback"))
-        review_to_apply = corrected_review(review)
         approve_disabled = submitted or not review_to_apply.validation.is_approvable or bool(rejected_fields)
-        if not review.validation.is_approvable:
+        if review_to_apply.validation.blocking_reasons:
             st.caption("Complete the highlighted fields before approving.")
+            for reason in review_to_apply.validation.blocking_reasons[:3]:
+                st.caption(reason)
         if rejected_fields:
             st.caption("Resolve rejected required fields before approving.")
         approve, reject = st.columns([1, 1])

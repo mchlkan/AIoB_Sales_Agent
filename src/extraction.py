@@ -6,8 +6,8 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from src.config import PROMPTS_DIR, Settings, load_settings
-from src.llm import LLMClient, LLMError, extract_json_object
-from src.schemas import EvidenceItem, ExtractionProposal, FollowUpTask, ModelRun
+from src.llm import LLMClient, LLMError, PROMPT_VERSIONS
+from src.schemas import EvidenceItem, ExtractionProposal, FollowUpTask, ModelAttempt, ModelRun
 
 
 class ExtractionAgent:
@@ -18,14 +18,23 @@ class ExtractionAgent:
     def extract(self, note: str, crm_context: str) -> tuple[ExtractionProposal, ModelRun]:
         prompt = self._build_prompt(note, crm_context)
         try:
-            response = self.client.complete(prompt, task="extraction", preferred_provider="gemini", json_mode=True)
-            proposal = ExtractionProposal.model_validate(extract_json_object(response.text))
+            proposal, response = self.client.complete_json_validated(
+                prompt=prompt,
+                task="extraction",
+                preferred_provider="gemini",
+                validator=ExtractionProposal.model_validate,
+                prompt_version=PROMPT_VERSIONS["extraction"],
+            )
             proposal.source = "llm"
             return proposal, ModelRun(
                 task="extraction",
                 provider=response.provider,
                 model=response.model,
                 fallback_used=response.fallback_used,
+                repair_used=response.repair_used,
+                prompt_version=response.prompt_version,
+                latency_ms=response.latency_ms,
+                attempts=response.attempts or [],
             )
         except (LLMError, ValueError, ValidationError) as exc:
             if not self.settings.demo_fallback_enabled:
@@ -37,7 +46,18 @@ class ExtractionAgent:
                 provider="demo_fallback",
                 model="rule_based",
                 fallback_used=True,
+                prompt_version=PROMPT_VERSIONS["extraction"],
                 error=str(exc),
+                attempts=[
+                    ModelAttempt(
+                        task="extraction",
+                        provider="demo_fallback",
+                        model="rule_based",
+                        attempt_type="demo_fallback",
+                        success=True,
+                        prompt_version=PROMPT_VERSIONS["extraction"],
+                    )
+                ],
             )
 
     @staticmethod

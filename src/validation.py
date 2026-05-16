@@ -12,8 +12,12 @@ class ValidationAgent:
         conn: sqlite3.Connection,
         proposal: ExtractionProposal,
         critic: CriticReport | None = None,
+        corrected_fields: set[str] | None = None,
     ) -> ValidationResult:
         warnings: list[str] = []
+        blocking_reasons: list[str] = []
+        needs_correction: list[str] = []
+        corrected_fields = corrected_fields or set()
         accounts = [row[0] for row in conn.execute("SELECT account FROM accounts").fetchall()]
         products = [row[0] for row in conn.execute("SELECT product FROM products").fetchall()]
         agents = [row[0] for row in conn.execute("SELECT sales_agent FROM sales_teams").fetchall()]
@@ -71,9 +75,15 @@ class ValidationAgent:
             warnings.append(opportunity_warning)
 
         if not can_advance_stage(opportunity_stage, proposal.suggested_stage):
-            warnings.append(
-                f"Suggested stage '{proposal.suggested_stage}' is not a logical advance from '{opportunity_stage}'."
+            stage_update_allowed = False
+            stage_update_blocked_reason = (
+                f"Suggested stage '{proposal.suggested_stage}' is not a logical advance from "
+                f"'{opportunity_stage}'."
             )
+            warnings.append(stage_update_blocked_reason)
+        else:
+            stage_update_allowed = True
+            stage_update_blocked_reason = None
 
         if proposal.confidence < 0.65:
             warnings.append("Low extraction confidence; review carefully before approval.")
@@ -84,6 +94,20 @@ class ValidationAgent:
                 warnings.append("Evidence critic confidence is low; review the proposed fields carefully.")
             for field in critic.needs_human_attention:
                 warnings.append(f"Evidence critic flagged {field} for human review.")
+            field_map = {
+                "account_name": "account",
+                "products_discussed": "products",
+                "meeting_summary": "summary",
+            }
+            for finding in critic.findings:
+                if finding.field not in field_map or finding.status not in {"missing", "contradicted"}:
+                    continue
+                correction_key = field_map[finding.field]
+                if correction_key in corrected_fields:
+                    continue
+                reason = f"{finding.field} is {finding.status} according to the evidence critic."
+                blocking_reasons.append(reason)
+                needs_correction.append(correction_key)
 
         matched = MatchResult(
             account_name=account_name,
@@ -95,5 +119,35 @@ class ValidationAgent:
             opportunity_warning=opportunity_warning,
             sales_agent=sales_agent,
         )
-        is_approvable = bool(account_name and product_names and opportunity_id)
-        return ValidationResult(is_approvable=is_approvable, warnings=warnings, matched=matched)
+        required_checks = [
+            ("account", account_name, "Account is required before approval."),
+            ("products", product_names, "At least one valid product is required before approval."),
+            ("opportunity", opportunity_id, "An open opportunity is required before approval."),
+            ("summary", proposal.meeting_summary.strip(), "Meeting summary is required before approval."),
+        ]
+        for field, value, reason in required_checks:
+            if value:
+                continue
+            blocking_reasons.append(reason)
+            needs_correction.append(field)
+
+        unique_blockers = list(dict.fromkeys(blocking_reasons))
+        unique_corrections = list(dict.fromkeys(needs_correction))
+        review_risk_level = "low"
+        if unique_blockers:
+            review_risk_level = "high"
+        elif proposal.confidence < 0.65 or (critic and critic.overall_confidence < 0.65):
+            review_risk_level = "medium"
+        elif stage_update_blocked_reason:
+            review_risk_level = "medium"
+
+        return ValidationResult(
+            is_approvable=not unique_blockers,
+            warnings=warnings,
+            blocking_reasons=unique_blockers,
+            needs_correction=unique_corrections,
+            stage_update_allowed=stage_update_allowed,
+            stage_update_blocked_reason=stage_update_blocked_reason,
+            review_risk_level=review_risk_level,
+            matched=matched,
+        )

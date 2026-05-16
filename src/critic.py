@@ -5,8 +5,8 @@ import json
 from pydantic import ValidationError
 
 from src.config import Settings, load_settings
-from src.llm import LLMClient, LLMError, extract_json_object
-from src.schemas import CriticFinding, CriticReport, ExtractionProposal, ModelRun
+from src.llm import LLMClient, LLMError, PROMPT_VERSIONS
+from src.schemas import CriticFinding, CriticReport, ExtractionProposal, ModelAttempt, ModelRun
 
 
 IMPORTANT_FIELDS = [
@@ -31,14 +31,23 @@ class EvidenceCriticAgent:
     def critique(self, note: str, proposal: ExtractionProposal) -> tuple[CriticReport, ModelRun]:
         prompt = self._build_prompt(note, proposal)
         try:
-            response = self.client.complete(prompt, task="critique", preferred_provider="groq", json_mode=True)
-            report = CriticReport.model_validate(extract_json_object(response.text))
+            report, response = self.client.complete_json_validated(
+                prompt=prompt,
+                task="critique",
+                preferred_provider="groq",
+                validator=CriticReport.model_validate,
+                prompt_version=PROMPT_VERSIONS["critique"],
+            )
             report.source = "llm"
             return report, ModelRun(
                 task="critique",
                 provider=response.provider,
                 model=response.model,
                 fallback_used=response.fallback_used,
+                repair_used=response.repair_used,
+                prompt_version=response.prompt_version,
+                latency_ms=response.latency_ms,
+                attempts=response.attempts or [],
             )
         except (LLMError, ValueError, ValidationError) as exc:
             report = deterministic_critique(note, proposal)
@@ -47,7 +56,18 @@ class EvidenceCriticAgent:
                 provider="critic_fallback",
                 model="rule_based",
                 fallback_used=True,
+                prompt_version=PROMPT_VERSIONS["critique"],
                 error=str(exc),
+                attempts=[
+                    ModelAttempt(
+                        task="critique",
+                        provider="critic_fallback",
+                        model="rule_based",
+                        attempt_type="demo_fallback",
+                        success=True,
+                        prompt_version=PROMPT_VERSIONS["critique"],
+                    )
+                ],
             )
 
     @staticmethod

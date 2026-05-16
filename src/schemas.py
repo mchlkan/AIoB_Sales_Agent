@@ -9,6 +9,9 @@ DealStage = Literal["Prospecting", "Engaging", "Proposal", "Won", "Lost"]
 Decision = Literal["approved", "rejected"]
 FieldSupportStatus = Literal["supported", "inferred", "missing", "contradicted"]
 ModelTask = Literal["extraction", "critique", "crm_chat"]
+AttemptType = Literal["primary", "repair", "provider_fallback", "demo_fallback"]
+ReviewRiskLevel = Literal["low", "medium", "high"]
+CRMChatIntent = Literal["attendees", "recent_meetings", "tasks", "risks", "pipeline", "audit", "unknown"]
 
 
 class EvidenceItem(BaseModel):
@@ -23,12 +26,27 @@ class FollowUpTask(BaseModel):
     evidence: str | None = None
 
 
+class ModelAttempt(BaseModel):
+    task: ModelTask
+    provider: str
+    model: str
+    attempt_type: AttemptType
+    success: bool
+    latency_ms: int = 0
+    prompt_version: str | None = None
+    error: str | None = None
+
+
 class ModelRun(BaseModel):
     task: ModelTask
     provider: str
     model: str
     fallback_used: bool = False
+    repair_used: bool = False
+    prompt_version: str | None = None
+    latency_ms: int = 0
     error: str | None = None
+    attempts: list[ModelAttempt] = Field(default_factory=list)
 
 
 class ExtractionProposal(BaseModel):
@@ -79,11 +97,17 @@ class MatchResult(BaseModel):
 class ValidationResult(BaseModel):
     is_approvable: bool
     warnings: list[str] = Field(default_factory=list)
+    blocking_reasons: list[str] = Field(default_factory=list)
+    needs_correction: list[str] = Field(default_factory=list)
+    stage_update_allowed: bool = True
+    stage_update_blocked_reason: str | None = None
+    review_risk_level: ReviewRiskLevel = "low"
     matched: MatchResult
 
 
 class ReviewPackage(BaseModel):
     proposal: ExtractionProposal
+    original_proposal: ExtractionProposal | None = None
     validation: ValidationResult
     source_note: str
     model_provider: str
@@ -93,7 +117,13 @@ class ReviewPackage(BaseModel):
 
 
 class WritebackOperation(BaseModel):
-    operation: Literal["insert_meeting_log", "insert_task", "update_opportunity_stage", "insert_audit_log"]
+    operation: Literal[
+        "insert_meeting_log",
+        "insert_task",
+        "update_opportunity_stage",
+        "skip_opportunity_stage_update",
+        "insert_audit_log",
+    ]
     target: str
     summary: str
 
@@ -106,4 +136,5 @@ class WritebackPlan(BaseModel):
 
 class CRMChatContext(BaseModel):
     source: str
+    intent: CRMChatIntent | None = None
     rows: list[dict[str, str | int | float | None]] = Field(default_factory=list)
