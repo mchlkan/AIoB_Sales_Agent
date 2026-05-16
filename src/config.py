@@ -23,10 +23,6 @@ class Settings:
     gemini_model: str
     groq_api_key: str
     groq_model: str
-    openrouter_api_key: str
-    openrouter_model: str
-    ollama_base_url: str
-    ollama_model: str
 
 
 def load_settings() -> Settings:
@@ -39,9 +35,5 @@ def load_settings() -> Settings:
         gemini_model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite").strip(),
         groq_api_key=os.getenv("GROQ_API_KEY", "").strip(),
         groq_model=os.getenv("GROQ_MODEL", "qwen/qwen3-32b").strip(),
-        openrouter_api_key=os.getenv("OPENROUTER_API_KEY", "").strip(),
-        openrouter_model=os.getenv("OPENROUTER_MODEL", "openrouter/free").strip(),
-        ollama_base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").strip(),
-        ollama_model=os.getenv("OLLAMA_MODEL", "qwen3:8b").strip(),
     )
 
