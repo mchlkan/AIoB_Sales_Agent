@@ -10,7 +10,7 @@ The core product idea is simple: the AI helps sales teams avoid manual CRM admin
 
 ## Table of Contents
 
-1. [Reproduce the Demo](#1-reproduce-the-demo)
+1. [Try the Demo](#1-try-the-demo)
 2. [Problem and Solution](#2-problem-and-solution)
 3. [Agentic Workflow](#3-agentic-workflow)
 4. [Models and Providers](#4-models-and-providers)
@@ -23,17 +23,29 @@ The core product idea is simple: the AI helps sales teams avoid manual CRM admin
 
 ---
 
-## 1. Reproduce the Demo
+## 1. Try the Demo
 
-This is the fastest path from a fresh clone to a working demo in the browser.
+There are two ways to run Close Loop. Pick whichever is easier.
 
-### 1.1 Prerequisites
+### Option A — Hosted demo (no setup)
+
+The app is deployed on Streamlit Community Cloud:
+
+**https://closeloop.streamlit.app/**
+
+Just open the link. The hosted version uses our Gemini and Groq keys, so all five agents are live. Note that the hosted SQLite database is ephemeral and resets on container restart — perfect for evaluation, not meant for persistent use.
+
+### Option B — Run locally
+
+If you'd rather reproduce the project from source, follow the steps below.
+
+#### 1. Prerequisites
 
 - Python 3.10+
 - A terminal
 - Optional: a Gemini API key and a Groq API key (both have free tiers). The app also runs without keys in deterministic demo-fallback mode.
 
-### 1.2 Clone and install
+#### 2. Clone and install
 
 ```bash
 git clone https://github.com/mchlkan/AIoB_Sales_Agent.git
@@ -45,7 +57,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 1.3 Configure environment
+#### 3. Configure environment
 
 ```bash
 cp .env.example .env
@@ -66,15 +78,15 @@ GROQ_MODEL=qwen/qwen3-32b
 
 If you skip the keys, set `DEMO_FALLBACK_ENABLED=true` and the app will use deterministic rule-based fallbacks for all LLM calls. The workflow stays end-to-end functional.
 
-### 1.4 Build the local CRM database
+#### 4. Build the local CRM database
 
 ```bash
 python db/setup_db.py
 ```
 
-This loads the five source CSV files in `data/` into a local SQLite database at `db/crm.db` and creates the runtime tables (`meeting_logs`, `tasks`, `audit_log`). The CSVs are treated as immutable source data; the database is reproducible at any time and is gitignored.
+This loads the five source CSV files in `data/` into a local SQLite database at `db/crm.db` and creates the runtime tables (`meeting_logs`, `tasks`, `audit_log`). The CSVs are treated as immutable source data; the database is reproducible at any time and is gitignored. (The app also auto-creates the database on first launch if it is missing, which is how the hosted version bootstraps itself.)
 
-### 1.5 Run the app
+#### 5. Run the app
 
 ```bash
 streamlit run app.py
@@ -86,15 +98,15 @@ Then open:
 http://localhost:8501
 ```
 
-### 1.6 Demo walkthrough
+### Demo walkthrough (applies to either option)
 
-1. Go to the **Workspace** tab.
-2. Pick one of the nine synthetic notes in the sidebar dropdown (or paste your own) — e.g. `note_01_delivery_risk.txt`.
-3. Click **Analyze meeting**. The Extraction Agent, Evidence Critic, and CRM Validation Agent run in sequence.
+1. Go to the **Workspace** page.
+2. Pick one of the nine synthetic notes from the dropdown (or paste your own) — e.g. `note_01_delivery_risk.txt`.
+3. Click **Analyze note**. The Extraction Agent, Evidence Critic, and CRM Validation Agent run in sequence.
 4. Review the structured proposal: account match, opportunity, products, summary, suggested stage, follow-up tasks, evidence quotes, and validation warnings.
 5. Optionally correct any fields the critic flagged.
-6. Click **Approve** to write the meeting log, tasks, and (if allowed) the stage update. Click **Reject** to only record the decision in the audit log.
-7. Switch to **Ask CRM** and try questions like _"Which open opportunities mentioned delivery risk?"_ or _"What follow-up tasks did I just approve?"_
+6. Click **Approve update** to write the meeting log, tasks, and (if allowed) the stage update. Click **Reject proposal** to only record the decision in the audit log.
+7. Use the **Ask CRM** panel on the right and try questions like _"Which open opportunities mentioned delivery risk?"_ or _"What follow-up tasks did I just approve?"_
 8. Switch to **Activity** to see the full audit trail.
 
 ---
