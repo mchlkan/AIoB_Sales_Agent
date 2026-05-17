@@ -6,6 +6,12 @@ The core product idea is simple: the AI helps sales teams avoid manual CRM admin
 
 > The AI drafts. The human commits.
 
+**2-minute pitch video:** https://novasbe365-my.sharepoint.com/:v:/g/personal/72782_novasbe_pt/IQCID4eeTXhYQqOzGEXP6EAoASAve-e0SeCz2uz_MZ0F66w?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=HyknBb  (link expires on May 27th)
+
+**Fallback YouTube Link:** https://youtu.be/Odb_UuR7rsU
+
+**Hosted prototype:** https://closeloop.streamlit.app/
+
 ---
 
 ## Table of Contents
@@ -19,13 +25,14 @@ The core product idea is simple: the AI helps sales teams avoid manual CRM admin
 7. [Project Structure](#7-project-structure)
 8. [Tests](#8-tests)
 9. [Limitations and Next Steps](#9-limitations-and-next-steps)
-10. [Design Principle](#10-design-principle)
+10. [Moat and Tradeoffs](#10-moat-and-tradeoffs)
+11. [Design Principle](#11-design-principle)
 
 ---
 
 ## 1. Try the Demo
 
-There are two ways to run Close Loop. Pick whichever is easier.
+The prototype can be evaluated in two ways. Both produce the same five-agent workflow.
 
 ### Option A — Hosted demo (no setup)
 
@@ -123,6 +130,10 @@ Sales reps spend significant time after meetings updating CRM records — writin
 - Follow-ups are forgotten
 - Managers lack pipeline visibility
 - CRM data quality decays
+
+### How users solve this today
+
+Reps currently type CRM updates by hand — either immediately after the meeting (rare, given back-to-back schedules), several hours later (most common, with degraded recall), or in a batched weekend admin block (frequently skipped under deadline pressure). Sales managers compensate by chasing reps over Slack and email for status updates, or by inferring pipeline state from stage fields that may be days or weeks stale. The net effect is a CRM that is structurally correct but semantically out of date: stages move, but the *why* — objections, buying signals, competitive context, next-step commitments — rarely lands in the record.
 
 ### Solution
 
@@ -554,10 +565,37 @@ The current goal is a reliable, end-to-end local demo of the agentic CRM workflo
 
 ---
 
-## 10. Design Principle
+## 10. Moat and Tradeoffs
+
+This section addresses two questions that a general-purpose LLM cannot answer for itself: *why is this defensible*, and *what are we deliberately giving up*.
+
+### Moat
+
+**Workflow depth, not a model wrapper.** Close Loop is not a thin prompt over a frontier model. It is a CRM-specific pipeline with deterministic stage-flow rules, product alias normalization (`GTXPro` ↔ `GTX Pro`), fuzzy account and opportunity matching, blocking-vs-warning logic, and a structured audit trail. Replicating this requires sales-domain knowledge, not just access to a better model. As frontier models commoditize, the defensibility lives in the surrounding workflow — and that is where this prototype invests.
+
+**Auditable human gate as a product.** A foundation-model provider sells the model; Close Loop sells the guardrails around it. The combination of evidence critic (`supported` / `inferred` / `missing` / `contradicted` per field), deterministic CRM validator (`is_approvable` flag with explicit blocking reasons), mandatory human approval, and immutable audit log forms a compliance-ready primitive. The artifact of value is not the extracted JSON; it is the *signed-off* extracted JSON together with its provenance.
+
+**Trust posture for regulated sales orgs.** In enterprise and regulated environments, "AI updated the CRM" is operationally and contractually unacceptable. "AI proposed; a named human approved; here is the full audit row with the model identifier, prompt version, and per-attempt telemetry" is acceptable. Close Loop is built around the second framing from the first commit.
+
+### Tradeoffs
+
+**Autonomy traded for trust.** Every meeting note requires a human click before the CRM is touched. This is slower than a fully autonomous agent that writes directly to Salesforce, and intentionally so — the alternative is silent corruption of the pipeline. The human gate is the product, not a limitation to be removed.
+
+**Latency traded for verifiability.** The happy path runs two LLM calls in sequence (Extraction Agent on Gemini, then Evidence Critic on Groq) plus deterministic validation. End-to-end this is several seconds per note. A single-shot extraction would be faster but would lose the per-field grounding verdict that drives the review UI and the blocking logic.
+
+**Coverage traded for safety.** The validator hard-blocks approval when account, product, opportunity, or summary cannot be matched against the live CRM. This rejects some legitimate edge-case notes — for example, a meeting referencing a brand-new prospect not yet in the CRM. Manual rep correction is required for those cases. The tradeoff is deliberate: the cost of a missed update is a follow-up nudge; the cost of a silently wrong update is a corrupted pipeline.
+
+**LLM provider risk traded for free-tier viability.** The default stack uses Gemini and Groq free tiers. This keeps the prototype runnable at zero cost but introduces external dependency on two consumer-grade APIs. Mitigation is built in: every LLM agent has a deterministic Python fallback, and `DEMO_FALLBACK_ENABLED=true` makes the app fully functional even if both providers are unavailable.
+
+---
+
+## 11. Design Principle
 
 > Close Loop is not an autonomous CRM mutation bot. It is an AI-assisted CRM admin system with evidence, validation, human approval, and auditability built into the workflow.
 
 The AI proposes. The human approves. Every decision is logged.
 
-*AI disclosure: Claude Code (Opus 4.7) was used as a coding assistant for the repository setup, the agentic workflow implementation, and the test suite. All conceptual work, problem definition, agentic design, and feature scoping, was done by the team.* 
+### AI assistance disclosure
+
+Claude Code (Opus 4.7) was used as a coding assistant for the repository setup, the agentic workflow implementation, and the test suite. All conceptual work — problem definition, agentic design, model selection, feature scoping, and risk framing — was done by the team.
+
